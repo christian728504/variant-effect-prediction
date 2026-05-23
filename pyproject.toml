@@ -1,12 +1,12 @@
 [project]
-name = "uv-lib"
+name = "variant-effect-prediction"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
     { name = "Christian Ramirez", email = "christian.ramirez1@umassmed.edu" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "polars[all]>=1.41.0",
 ]

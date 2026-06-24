@@ -1,23 +1,28 @@
 """Borzoi track metadata loader.
 
-`targets_human.txt.gz` columns:
+Reads the bundled `borzoi-track-metadata.parquet` (see `metadata/data/README.md`),
+which carries the upstream `targets_human.txt` columns:
     (unnamed index), identifier, file, clip, clip_soft, scale, sum_stat,
     strand_pair, description
 
-Like Enformer, the ENCODE accession is embedded in the `file` path.
+Like Enformer, the ENCODE accession is embedded in the `file` path. This loader
+takes no arguments — it always uses the file we ship.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import polars as pl
 
+from variant_effect_prediction.metadata._data import (
+    BORZOI_TRACKS,
+    read_packaged_parquet,
+)
 
-def load_borzoi_tracks(path: str | Path) -> pl.DataFrame:
-    """Load Borzoi track metadata with `accession` + `assay` columns added."""
-    df = pl.read_csv(path, separator="\t")
-    # The first column is unnamed; polars usually labels it "" or "column_1".
+
+def load_borzoi_tracks() -> pl.DataFrame:
+    """Load the bundled Borzoi track metadata with `track_index` + `accession` + `assay`."""
+    df = read_packaged_parquet(BORZOI_TRACKS)
+    # The upstream first column is unnamed; it carries the per-track index.
     if "" in df.columns:
         df = df.rename({"": "track_index"})
     accession = pl.col("file").str.extract(r"(ENCSR[0-9A-Z]{6})", 1).alias("accession")

@@ -1,3 +1,11 @@
+# User defined
+notebooks/
+scratch/
+evals/
+resources/
+tests/
+NOTES.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

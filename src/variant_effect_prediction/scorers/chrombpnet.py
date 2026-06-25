@@ -1,7 +1,10 @@
 """ChromBPNetVariantScorer — 5-fold ensemble; forward-only; uses tangermeme.predict.
 
-Scores the **bias-corrected accessibility model** (`chrombpnet_nobias`) alone — NOT
-the full ChromBPNet (accessibility + Tn5/DNase bias). This matches the variant-effect
+Loads each fold from a pre-converted torch state dict (`fold_{i}.torch`, a
+`{"config", "state_dict"}` payload produced by
+`scripts/convert_chrombpnet_to_torch.py`). The converter only ever writes the
+**bias-corrected accessibility model** (`chrombpnet_nobias`) — NOT the full
+ChromBPNet (accessibility + Tn5/DNase bias). This matches the variant-effect
 convention used by the reference `variant_effect` repo
 (`chrom_bench.py` → `BPNet.from_chrombpnet(chrombpnet_nobias.h5)`) and the published
 ChromBPNet variant-scorer logFC values. Including the bias model would add the
@@ -49,14 +52,12 @@ class ChromBPNetVariantScorer(VariantScorer):
         self.folded_weights = folded_weights
 
     def _load_fold(self, fold: int) -> torch.nn.Module:
-        # `acc` is the chrombpnet_nobias model in both loaders; the bias handle is
-        # intentionally unused (we score the bias-corrected accessibility model only).
-        _bias, acc = self.folded_weights[fold]
-        # BytesIO blobs (tar layout) need rewinding; Path/str (h5-folds layout)
-        # are passed straight through — BPNet.from_chrombpnet accepts both.
-        if hasattr(acc, "seek"):
-            acc.seek(0)
-        return BPNet.from_chrombpnet(acc)
+        payload = torch.load(
+            self.folded_weights[fold], map_location=self.device, weights_only=True
+        )
+        model = BPNet(**payload["config"])
+        model.load_state_dict(payload["state_dict"])
+        return model
 
     def _predict_alleles(self, allele1_seqs, allele2_seqs):
         X1 = one_hot_batch(allele1_seqs)

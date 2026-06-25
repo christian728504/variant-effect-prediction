@@ -41,7 +41,7 @@ vs = VariantSet.from_tsv(
     apply_isused=False,
 )
 
-weights = FoldedModelWeights.from_chrombpnet_tar("ENCSR637XSC/model.tar.gz", eid="ENCSR637XSC")
+weights = FoldedModelWeights.from_dir("weights/chrombpnet/ENCSR637XSC")
 scorer = ChromBPNetVariantScorer(folded_weights=weights, ref_genome=ref)
 
 scored = scorer.score(vs)   # Polars DataFrame: logfc, jsd, per-allele predictions, …
@@ -82,13 +82,14 @@ vs = VariantSet.from_dataframe(df, chrom_col=..., start_col=..., allele1_col=...
 
 ### `FoldedModelWeights` — 5-fold weight container
 
-BPNet-like scorers (ChromBPNet, Cherimoya) ensemble five folds. `FoldedModelWeights` holds the five per-fold weight handles, with loaders for each on-disk layout:
+BPNet-like scorers (ChromBPNet, Cherimoya) ensemble five folds. `FoldedModelWeights.from_dir(dir, pattern="fold_{i}.torch")` locates the five per-fold torch state-dict files in a `<MODEL_NAME>/fold_{i}.torch` directory and validates they exist. Each fold file is a `{"config", "state_dict"}` payload that the scorer reconstructs.
 
-| Loader                                  | Source layout                                    |
-|-----------------------------------------|--------------------------------------------------|
-| `FoldedModelWeights.from_chrombpnet_tar(tar, eid=...)`     | ENCODE `model.tar.gz` (bias + nobias h5 blobs) |
-| `FoldedModelWeights.from_chrombpnet_h5_folds(models_dir)`  | `models/fold_N/<bias>.h5 + <acc>.h5`           |
-| `FoldedModelWeights.from_cherimoya_dir(dir)`               | directory of `fold_{i}.final.torch` files       |
+Cherimoya already saves models in this format (pass `pattern="fold_{i}.final.torch"`). ChromBPNet weights ship as TensorFlow h5 (ENCODE `model.tar.gz` or `models/fold_N/chrombpnet_nobias.h5`); convert them once with `scripts/convert_chrombpnet_to_torch.py`:
+
+```bash
+python scripts/convert_chrombpnet_to_torch.py \
+    --tar ENCSR637XSC/model.tar.gz --eid ENCSR637XSC --out weights/chrombpnet/ENCSR637XSC
+```
 
 ### Scorers
 
@@ -123,7 +124,7 @@ These return Polars frames mapping ENCODE accessions to the track indices each m
 src/variant_effect_prediction/
   variantset.py   VariantSet — canonical-schema variant table
   references.py   RefGenome — pysam-backed FASTA + allele extraction
-  weights.py      FoldedModelWeights — 5-fold weight container + loaders
+  weights.py      FoldedModelWeights — 5-fold state-dict path container + from_dir loader
   scoring.py      logFC / JSD primitives (reference-parity)
   scorers/        VariantScorer ABC + per-model scorers
   wrappers/       tangermeme-compatible many-tracks model wrappers

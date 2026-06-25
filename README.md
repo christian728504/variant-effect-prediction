@@ -1,15 +1,15 @@
 # variant-effect-prediction
 
-A Python library for scoring non-coding genetic variants with sequence-to-function deep learning models. It puts five published models — **ChromBPNet**, **Cherimoya**, **AlphaGenome**, **Borzoi**, and **Enformer** — behind one scoring API: feed it a table of variants and a reference genome, get back each model's predicted allelic effect (logFC) and profile shift (JSD).
+A Python library for scoring non-coding genetic variants with sequence-to-function deep learning models. It provides one scoring interface for five published models — **ChromBPNet**, **Cherimoya**, **AlphaGenome**, **Borzoi**, and **Enformer**. Given a table of variants and a reference genome, each model returns a predicted allelic effect (logFC) and profile shift (JSD).
 
-The design goal is *parity*: predicted effects are computed to match the reference ChromBPNet variant-scorer convention exactly, so scores are comparable across models.
+Predicted effects are computed to match the reference ChromBPNet variant-scorer convention, so scores are comparable across models.
 
 ## Features
 
-- **One API for five models.** Every model is a `VariantScorer` subclass implementing a single `_predict_alleles` method; the base class handles sequence extraction, batching, logFC, and JSD. Calling code only ever touches `scorer.score(variant_set)`.
-- **Strict, self-validating variant tables.** `VariantSet` wraps a Polars DataFrame with an enforced canonical schema and maps free-form QTL/GWAS column names onto it at construction, dropping indels and applying `isused` masks.
-- **Reference-implementation parity.** logFC is computed in log space (`log2(allele2 / allele1)`) and JSD via mean-subtracted softmax / sum normalization to match the published ChromBPNet `variant_effect` scoring code. Allele extraction follows the variant-scorer convention (no ref-base check, boundary N-padding).
-- **Build-agnostic reference access.** `RefGenome` wraps any pysam/faidx-indexed FASTA (GRCh37, GRCh38, …); the build is just whichever FASTA you point it at.
+- **Single scoring interface across five models.** Every model is a `VariantScorer` subclass implementing a `_predict_alleles` method; the base class handles sequence extraction, batching, logFC, and JSD. Calling code uses `scorer.score(variant_set)`.
+- **Schema-validated variant tables.** `VariantSet` wraps a Polars DataFrame with an enforced canonical schema, maps free-form QTL/GWAS column names onto it at construction, drops indels, and applies `isused` masks.
+- **Matches the reference ChromBPNet scorer.** logFC is computed in log space (`log2(allele2 / allele1)`) and JSD via mean-subtracted softmax / sum normalization, following the published ChromBPNet `variant_effect` scoring code. Allele extraction follows the variant-scorer convention (no ref-base check, boundary N-padding).
+- **Reference access by FASTA.** `RefGenome` wraps any pysam/faidx-indexed FASTA (GRCh37, GRCh38, …); the build is whichever FASTA you point it at.
 - **Bundled track metadata.** Enformer / Borzoi / AlphaGenome track tables and ENCODE accession maps ship as package-data parquet, so resolving a many-tracks model's track index needs no external downloads.
 
 ## Installation

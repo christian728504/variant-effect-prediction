@@ -43,7 +43,6 @@ class CherimoyaVariantScorer(VariantScorer):
     def _load_fold(self, fold: int) -> torch.nn.Module:
         weight_path = str(self.folded_weights[fold])
         return Cherimoya.load(weight_path, device=self.device)
-        # return torch.load(weight_path, weights_only=False).to(self.device)
 
     def _predict_alleles(self, allele1_seqs, allele2_seqs):
         X1 = one_hot_batch(allele1_seqs)
